@@ -10,8 +10,6 @@ export const useFincodeHooks = () => {
     return _ui;
   }, [fincode]);
 
-  const [token, setToken] = useState();
-
   const mountUI = () => {
     setTimeout(() => {
       const _fincode = Fincode(
@@ -23,9 +21,14 @@ export const useFincodeHooks = () => {
 
   const submit = (event) => {
     event.preventDefault();
+    const id = localStorage.getItem("fincode-id");
+    const accessId = localStorage.getItem("fincode-access-id");
+
     ui.getFormData().then((result) => {
-      console.log(result);
-      generateToken({
+      sendTransaction({
+        pay_type: "Card",
+        access_id: accessId,
+        id: id,
         card_no: result.cardNo,
         expire: result.expire,
         holder_name: result.holderName,
@@ -38,46 +41,15 @@ export const useFincodeHooks = () => {
     return false;
   };
 
-  const generateToken = (card) => {
-    const id = localStorage.getItem("fincode-id");
-    const accessId = localStorage.getItem("fincode-access-id");
-
-    fincode.tokens(
-      card,
-      function (status, response) {
-        if (status === 200) {
-          console.log("success", response);
-          setToken(response.list[0].token);
-          const transaction = {
-            pay_type: "Card",
-            access_id: accessId,
-            id: id,
-            card_no: card.card_no,
-            expire: card.expire,
-            method: card.method,
-            pay_times: card.pay_times,
-            security_code: card.security_code,
-            holder_name: card.holder_name,
-          };
-          console.log(transaction);
-          sendTransaction(transaction);
-        } else {
-          console.log("error", response);
-        }
-      },
-      function (e) {
-        console.log("connection error", e);
-      }
-    );
-  };
-
   const sendTransaction = (transaction) => {
     fincode.payments(
       transaction,
       function (status, response) {
         if (status === 200) {
           console.log("payment success", response);
+          alert(`You paid ${response.amount} with ${response.brand}`);
         } else {
+          alert("payment failed");
           console.log("payment error", response);
         }
       },
